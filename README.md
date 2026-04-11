@@ -1,1 +1,2 @@
-# Gomoku-programme
+# Gomoku-program
+This is a project I did in high school. I just started learning coding then. I used the basic programming knowledge I had at that time to create a simple gomoku (also known as five-in-a-row) program. I created 2-dimentional array as a checkerboard and had the program to calculate the values of each position to reach the best move. This program obtained a 52% win rate online. Even though it is just a simple program, this success inspired my interest in computer science and motivated me to become a better programmer.

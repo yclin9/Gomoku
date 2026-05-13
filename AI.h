@@ -8,28 +8,15 @@ public:
     Move findBestMove(Board& board, Cell aiPlayer);
 
 private:
-    static constexpr int SEARCH_DEPTH = 3;
+    int liveFour  (int x, int y, Cell piece, const Board& board) const;
+    int deadFour  (int x, int y, Cell piece, const Board& board) const;
+    int liveThree (int x, int y, Cell piece, const Board& board) const;
+    int deadThree (int x, int y, Cell piece, const Board& board) const;
+    int liveTwo   (int x, int y, Cell piece, const Board& board) const;
+    int oneOne    (int x, int y, Cell piece, const Board& board) const;
+    int oneTwo    (int x, int y, Cell piece, const Board& board) const;
 
-    int minimax(Board& board,
-                int depth,
-                bool maximizingPlayer,
-                int alpha,
-                int beta,
-                Cell aiPlayer);
-
-    int evaluateBoard(Board& board, Cell aiPlayer);
-
-    int evaluatePosition(Board& board,
-                         Move move,
-                         Cell player);
-
-    int evaluateDirection(Board& board,
-                          Move move,
-                          int dRow,
-                          int dCol,
-                          Cell player);
-
-    std::vector<Move> generateCandidateMoves(Board& board);
+    int scoreCell (int x, int y, Cell aiPlayer, const Board& board) const;
 
     Cell opponent(Cell player) const;
 };

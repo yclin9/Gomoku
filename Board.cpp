@@ -52,8 +52,8 @@ bool Board::isWin(const Move& move, Cell player) const
     static const int dirs[4][2] = {
         {1, 0},   // vertical
         {0, 1},   // horizontal
-        {1, 1},   // diagonal \
-        {1, -1}   // diagonal /
+        {1, 1},   // diagonal ul -> dr
+        {1, -1}   // diagonal ur -> dl
     };
 
     for (auto& d : dirs)
@@ -127,4 +127,9 @@ void Board::print() const
     }
 
     std::cout << '\n';
+}
+
+Cell Board::getCell(int row, int col) const
+{
+    return grid[row][col];
 }

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "AI.h"
 #include "Board.h"
 

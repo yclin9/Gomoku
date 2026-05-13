@@ -29,6 +29,8 @@ public:
 
     void print() const;
 
+    Cell getCell(int row, int col) const;
+
 private:
     std::array<std::array<Cell, SIZE>, SIZE> grid;
 

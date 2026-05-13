@@ -83,6 +83,8 @@ void Game::handleHumanMove()
 
         board.placeMove(move, currentPlayer);
 
+        // ************************************* ERROR AFTER HERE *********************************************
+
         if (board.isWin(move, currentPlayer))
         {
             board.print();
@@ -100,6 +102,7 @@ void Game::handleHumanMove()
         }
 
         currentPlayer = Cell::O;
+        
         break;
     }
 }

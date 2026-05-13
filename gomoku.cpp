@@ -76,13 +76,13 @@ void print_board()
 		if (15-i<10) cout << " ";
 		for (int j=0 ; j<15 ; j++)
 		{
-			if (board[i][j]=='O') cout << "��";
-			else if (board[i][j]=='X') cout << "��";
-			else cout << "��"; 
+			if (board[i][j]=='O') cout << "��";
+			else if (board[i][j]=='X') cout << "��";
+			else cout << "��"; 
 		}
 		cout << "\n";
 	}
-	cout << "   �ϢТѢҢӢԢբ֢עآ٢ڢۢܢ�" << endl;
+	cout << "   �ϢТѢҢӢԢբ֢עآ٢ڢۢܢ�" << endl;
 }
 
 void print_value()

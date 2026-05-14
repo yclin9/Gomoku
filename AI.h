@@ -8,6 +8,7 @@ public:
     Move findBestMove(Board& board, Cell aiPlayer);
 
 private:
+    int fiveInARow  (int x, int y, Cell piece, const Board& board) const;
     int liveFour  (int x, int y, Cell piece, const Board& board) const;
     int deadFour  (int x, int y, Cell piece, const Board& board) const;
     int liveThree (int x, int y, Cell piece, const Board& board) const;

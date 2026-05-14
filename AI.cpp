@@ -8,21 +8,43 @@ Cell AI::opponent(Cell player) const
     return (player == Cell::X) ? Cell::O : Cell::X;
 }
 
-// Returns the cell at (r,c), or a sentinel if out of bounds
-static Cell getAt(const Board& board, int r, int c)
+static bool isEmpty (const Board& b, int r, int c)
 {
-    if (r < 0 || r >= Board::SIZE ||
-        c < 0 || c >= Board::SIZE)
-        return Cell::X; // treat out-of-bounds as blocked (non-empty, non-opponent-specific)
-    return board.getCell(r, c);
+    if (r < 0 || r >= Board::SIZE || c < 0 || c >= Board::SIZE)
+        return false;
+    return b.getCell(r, c) == Cell::Empty;
 }
-
-static bool isEmpty (const Board& b, int r, int c) { return getAt(b,r,c) == Cell::Empty; }
-static bool isPiece (const Board& b, int r, int c, Cell p) { return getAt(b,r,c) == p; }
+static bool isPiece (const Board& b, int r, int c, Cell p)
+{
+    if (r < 0 || r >= Board::SIZE || c < 0 || c >= Board::SIZE)
+        return false;
+    return b.getCell(r, c) == p;
+}
 static bool isOther (const Board& b, int r, int c, Cell p)
 {
-    Cell v = getAt(b,r,c);
+    if (r < 0 || r >= Board::SIZE || c < 0 || c >= Board::SIZE)
+        return true;
+    Cell v = b.getCell(r, c);
     return v != Cell::Empty && v != p;
+}
+
+// p p p p p (five in a row)
+int AI::fiveInARow(int x, int y, Cell p, const Board& b) const
+{
+    static const int dx[4]={1,0,1,1}, dy[4]={0,1,1,-1};
+    int count = 0;
+    for (int i = 0; i < 4; ++i)
+    {
+        for (int j = -4; j <= 0; ++j)
+        {
+            // pattern: p, p, p, p, p  (5 cells)
+            bool ok = true;
+            for (int k = 0; k <= 4; ++k)
+                if (!isPiece(b, x+(j+k)*dx[i], y+(j+k)*dy[i], p)) { ok=false; break; }
+            if (ok) { ++count; break; }
+        }
+    }
+    return count;
 }
 
 // _ p p p p _ (live four)
@@ -208,20 +230,26 @@ int AI::oneTwo(int x, int y, Cell p, const Board& b) const
 int AI::scoreCell(int x, int y, Cell ai, const Board& board) const
 {
     Cell opp = opponent(ai);
-    int score = 0;
+    // int score = 0;
+    int ORIGINAL_SCORE[8] = {16, 44, 65, 80, 90, 96, 99, 100};
+    int index = std::min(std::min(x, 14 - x), std::min(y, 14 - y));
+    int score = ORIGINAL_SCORE[index];
 
     // Cast away const to temporarily place pieces for pattern evaluation
     Board& b = const_cast<Board&>(board);
 
     // --- Defend: score opponent's threats if THEY played here ---
     b.placeMove({x, y}, opp);
+    if (fiveInARow(x,y,opp,b)) score += 10000000;
     score += 60000 * liveFour(x, y, opp, b);
     int oppCombo = deadFour(x,y,opp,b) + liveThree(x,y,opp,b) + oneTwo(x,y,opp,b);
     if (oppCombo >= 2 && deadFour(x,y,opp,b) > 0) score += 20000;
     if (oppCombo >= 2 && deadFour(x,y,opp,b) == 0) score += 10000;
     score += 550 * deadFour(x,y,opp,b);
-    score += 500 * (liveThree(x,y,opp,b) + oneTwo(x,y,opp,b));
+    score += 500 * liveThree(x,y,opp,b);
+    score += 450 * oneTwo(x,y,opp,b);
     score += 100 * (deadThree(x,y,opp,b) + liveTwo(x,y,opp,b) + oneOne(x,y,opp,b));
+    score += 90 * oneOne(x,y,opp,b);
     b.undoMove({x, y});
 
     // --- Attack: score AI's gain if WE play here ---
@@ -230,7 +258,11 @@ int AI::scoreCell(int x, int y, Cell ai, const Board& board) const
     int aiCombo = deadFour(x,y,ai,b) + liveThree(x,y,ai,b) + oneTwo(x,y,ai,b);
     if (aiCombo >= 2 && deadFour(x,y,ai,b) > 0) score += 80000;
     if (aiCombo >= 2 && deadFour(x,y,ai,b) == 0) score += 50000;
-    score += 1000 * (deadThree(x,y,ai,b) + liveTwo(x,y,ai,b) + oneOne(x,y,ai,b));
+    score += 1100 * deadFour(x,y,ai,b);
+    score += 1000 * liveThree(x,y,ai,b);
+    score += 900 * oneTwo(x,y,ai,b);
+    score += 200 * (deadThree(x,y,ai,b) + liveTwo(x,y,ai,b) + oneOne(x,y,ai,b));
+    score += 180 * oneOne(x,y,ai,b);
     b.undoMove({x, y});
 
     return score;

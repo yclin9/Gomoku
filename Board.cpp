@@ -1,44 +1,33 @@
 #include "Board.h"
 
-Board::Board()
-{
-    for (auto& row : grid)
-    {
+Board::Board() {
+    for (auto& row : grid) {
         row.fill(Cell::Empty);
     }
 }
 
-bool Board::inBounds(int row, int col) const
-{
+bool Board::inBounds(int row, int col) const {
     return row >= 0 && row < SIZE &&
            col >= 0 && col < SIZE;
 }
 
-bool Board::isValidMove(const Move& move) const
-{
+bool Board::isValidMove(const Move& move) const {
     return inBounds(move.row, move.col) &&
            grid[move.row][move.col] == Cell::Empty;
 }
 
-void Board::placeMove(const Move& move, Cell player)
-{
+void Board::placeMove(const Move& move, Cell player) {
     grid[move.row][move.col] = player;
 }
 
-void Board::undoMove(const Move& move)
-{
+void Board::undoMove(const Move& move) {
     grid[move.row][move.col] = Cell::Empty;
 }
 
-int Board::countDirection(int row, int col,
-                          int dRow, int dCol,
-                          Cell player) const
-{
+int Board::countDirection(int row, int col, int dRow, int dCol, Cell player) const {
     int count = 0;
 
-    while (inBounds(row, col) &&
-           grid[row][col] == player)
-    {
+    while (inBounds(row, col) && grid[row][col] == player) {
         ++count;
         row += dRow;
         col += dCol;
@@ -47,8 +36,7 @@ int Board::countDirection(int row, int col,
     return count;
 }
 
-bool Board::isWin(const Move& move, Cell player) const
-{
+bool Board::isWin(const Move& move, Cell player) const {
     static const int dirs[4][2] = {
         {1, 0},   // vertical
         {0, 1},   // horizontal
@@ -56,8 +44,7 @@ bool Board::isWin(const Move& move, Cell player) const
         {1, -1}   // diagonal ur -> dl
     };
 
-    for (auto& d : dirs)
-    {
+    for (auto& d : dirs) {
         int dRow = d[0];
         int dCol = d[1];
 
@@ -71,19 +58,15 @@ bool Board::isWin(const Move& move, Cell player) const
                            move.col - dCol,
                            -dRow, -dCol, player);
 
-        if (total >= 5)
-            return true;
+        if (total >= 5) return true;
     }
 
     return false;
 }
 
-bool Board::isFull() const
-{
-    for (const auto& row : grid)
-    {
-        for (Cell c : row)
-        {
+bool Board::isFull() const {
+    for (const auto& row : grid) {
+        for (Cell c : row) {
             if (c == Cell::Empty)
                 return false;
         }
@@ -91,19 +74,16 @@ bool Board::isFull() const
     return true;
 }
 
-void Board::print() const
-{
+void Board::print() const {
     std::cout << "\n   ";
 
-    for (int c = 0; c < SIZE; ++c)
-    {
+    for (int c = 0; c < SIZE; ++c) {
         std::cout << static_cast<char>('A' + c) << ' ';
     }
 
     std::cout << "\n";
 
-    for (int r = 0; r < SIZE; ++r)
-    {
+    for (int r = 0; r < SIZE; ++r) {
         int displayRow = SIZE - r;
 
         if (displayRow < 10)
@@ -111,25 +91,30 @@ void Board::print() const
 
         std::cout << displayRow << ' ';
 
-        for (int c = 0; c < SIZE; ++c)
-        {
+        for (int c = 0; c < SIZE; ++c) {
             char symbol = '.';
 
-            if (grid[r][c] == Cell::X)
+            if (grid[r][c] == Cell::X) {
                 symbol = 'X';
-            else if (grid[r][c] == Cell::O)
+            } else if (grid[r][c] == Cell::O){
                 symbol = 'O';
+            }
 
             std::cout << symbol << ' ';
         }
 
-        std::cout << '\n';
+        std::cout << "\n";
+    }
+
+    std::cout << "   ";
+
+    for (int c = 0; c < SIZE; ++c) {
+        std::cout << static_cast<char>('A' + c) << ' ';
     }
 
     std::cout << '\n';
 }
 
-Cell Board::getCell(int row, int col) const
-{
+Cell Board::getCell(int row, int col) const {
     return grid[row][col];
 }

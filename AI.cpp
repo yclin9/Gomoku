@@ -3,25 +3,23 @@
 #include <vector>
 #include <algorithm>
 
-Cell AI::opponent(Cell player) const
-{
+Cell AI::opponent(Cell player) const {
     return (player == Cell::X) ? Cell::O : Cell::X;
 }
 
-static bool isEmpty (const Board& b, int r, int c)
-{
+static bool isEmpty (const Board& b, int r, int c) {
     if (r < 0 || r >= Board::SIZE || c < 0 || c >= Board::SIZE)
         return false;
     return b.getCell(r, c) == Cell::Empty;
 }
-static bool isPiece (const Board& b, int r, int c, Cell p)
-{
+
+static bool isPiece (const Board& b, int r, int c, Cell p) {
     if (r < 0 || r >= Board::SIZE || c < 0 || c >= Board::SIZE)
         return false;
     return b.getCell(r, c) == p;
 }
-static bool isOther (const Board& b, int r, int c, Cell p)
-{
+
+static bool isOther (const Board& b, int r, int c, Cell p) {
     if (r < 0 || r >= Board::SIZE || c < 0 || c >= Board::SIZE)
         return true;
     Cell v = b.getCell(r, c);
@@ -227,63 +225,88 @@ int AI::oneTwo(int x, int y, Cell p, const Board& b) const
     return count;
 }
 
-int AI::scoreCell(int x, int y, Cell ai, const Board& board) const
-{
+int AI::scoreCell(int x, int y, Cell ai, const Board& board) const {
     Cell opp = opponent(ai);
-    // int score = 0;
-    int ORIGINAL_SCORE[8] = {16, 44, 65, 80, 90, 96, 99, 100};
-    int index = std::min(std::min(x, 14 - x), std::min(y, 14 - y));
-    int score = ORIGINAL_SCORE[index];
 
     // Cast away const to temporarily place pieces for pattern evaluation
     Board& b = const_cast<Board&>(board);
 
-    // --- Defend: score opponent's threats if THEY played here ---
+    b.placeMove({x, y}, ai);
+    if (fiveInARow(x,y,ai,b)) {
+        b.undoMove({x, y});
+        return 20000000;
+    }
+
     b.placeMove({x, y}, opp);
-    if (fiveInARow(x,y,opp,b)) score += 10000000;
-    score += 60000 * liveFour(x, y, opp, b);
+    if (fiveInARow(x,y,opp,b)) {
+        b.undoMove({x, y});
+        return 10000000;
+    }
+    
+    b.placeMove({x, y}, ai);
+    if (liveFour(x,y,ai,b) >= 1) {
+        b.undoMove({x, y});
+        return 5000000;
+    }
+    
+    int ORIGINAL_SCORE[8] = {16, 44, 65, 80, 90, 96, 99, 100};
+    int index = std::min(std::min(x, 14 - x), std::min(y, 14 - y));
+    int score = ORIGINAL_SCORE[index];
+    
+    b.placeMove({x, y}, opp);
+    if (liveFour(x,y,opp,b) >= 1) score += 500000;
+    b.undoMove({x, y});
+    
+    b.placeMove({x, y}, ai);
+    int aiCombo = deadFour(x,y,ai,b) + liveThree(x,y,ai,b) + oneTwo(x,y,ai,b);
+    if (aiCombo >= 2) {
+        if (deadFour(x,y,ai,b) > 0) score += 1000000;
+        else score += 300000;
+    } else {
+        score += 500000 * deadFour(x,y,ai,b);
+        score += 150000 * liveThree(x,y,ai,b);
+        score += 100000 * oneTwo(x,y,ai,b);
+    }
+    b.undoMove({x, y});
+    
+    b.placeMove({x, y}, opp);
     int oppCombo = deadFour(x,y,opp,b) + liveThree(x,y,opp,b) + oneTwo(x,y,opp,b);
-    if (oppCombo >= 2 && deadFour(x,y,opp,b) > 0) score += 20000;
-    if (oppCombo >= 2 && deadFour(x,y,opp,b) == 0) score += 10000;
-    score += 550 * deadFour(x,y,opp,b);
-    score += 500 * liveThree(x,y,opp,b);
-    score += 450 * oneTwo(x,y,opp,b);
-    score += 100 * (deadThree(x,y,opp,b) + liveTwo(x,y,opp,b) + oneOne(x,y,opp,b));
-    score += 90 * oneOne(x,y,opp,b);
+    if (oppCombo >= 2) {
+        if (deadFour(x,y,ai,b) > 0) score += 100000;
+        else score += 300000;
+    } else {
+        score += 50000 * deadFour(x,y,opp,b);
+        score += 15000 * liveThree(x,y,opp,b);
+        score += 10000 * oneTwo(x,y,opp,b);
+    }
     b.undoMove({x, y});
 
-    // --- Attack: score AI's gain if WE play here ---
     b.placeMove({x, y}, ai);
-    if (liveFour(x,y,ai,b) >= 1) score += 100000;
-    int aiCombo = deadFour(x,y,ai,b) + liveThree(x,y,ai,b) + oneTwo(x,y,ai,b);
-    if (aiCombo >= 2 && deadFour(x,y,ai,b) > 0) score += 80000;
-    if (aiCombo >= 2 && deadFour(x,y,ai,b) == 0) score += 50000;
-    score += 1100 * deadFour(x,y,ai,b);
-    score += 1000 * liveThree(x,y,ai,b);
-    score += 900 * oneTwo(x,y,ai,b);
-    score += 200 * (deadThree(x,y,ai,b) + liveTwo(x,y,ai,b) + oneOne(x,y,ai,b));
-    score += 180 * oneOne(x,y,ai,b);
+    score += 1000 * liveTwo(x,y,ai,b);
+    score += 900 * deadThree(x,y,ai,b);
+    score += 800 * oneOne(x,y,ai,b);
+    b.undoMove({x, y});
+
+    b.placeMove({x, y}, opp);
+    score += 500 * liveTwo(x,y,opp,b);
+    score += 450 * deadThree(x,y,opp,b);
+    score += 400 * oneOne(x,y,opp,b);
     b.undoMove({x, y});
 
     return score;
 }
 
-Move AI::findBestMove(Board& board, Cell aiPlayer)
-{
+Move AI::findBestMove(Board& board, Cell aiPlayer) {
     int bestScore = -1;
     std::vector<Move> bestMoves;
 
-    for (int r = 0; r < Board::SIZE; ++r)
-    {
-        for (int c = 0; c < Board::SIZE; ++c)
-        {
-            if (!board.isValidMove({r, c}))
-                continue;
+    for (int r = 0; r < Board::SIZE; ++r) {
+        for (int c = 0; c < Board::SIZE; ++c) {
+            if (!board.isValidMove({r, c})) continue;
 
             // Immediate win check
             board.placeMove({r,c}, aiPlayer);
-            if (board.isWin({r,c}, aiPlayer))
-            {
+            if (board.isWin({r,c}, aiPlayer)) {
                 board.undoMove({r,c});
                 return {r, c};
             }
@@ -291,14 +314,11 @@ Move AI::findBestMove(Board& board, Cell aiPlayer)
 
             int score = scoreCell(r, c, aiPlayer, board);
 
-            if (score > bestScore)
-            {
+            if (score > bestScore) {
                 bestScore = score;
                 bestMoves.clear();
                 bestMoves.push_back({r, c});
-            }
-            else if (score == bestScore)
-            {
+            } else if (score == bestScore) {
                 bestMoves.push_back({r, c});
             }
         }

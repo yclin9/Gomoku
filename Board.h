@@ -36,7 +36,5 @@ private:
 
     bool inBounds(int row, int col) const;
 
-    int countDirection(int row, int col,
-                       int dRow, int dCol,
-                       Cell player) const;
+    int countDirection(int row, int col, int dRow, int dCol, Cell player) const;
 };

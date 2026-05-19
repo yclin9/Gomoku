@@ -26,203 +26,72 @@ static bool isOther (const Board& b, int r, int c, Cell p) {
     return v != Cell::Empty && v != p;
 }
 
-// p p p p p (five in a row)
-int AI::fiveInARow(int x, int y, Cell p, const Board& b) const
-{
+int checkShape(int x, int y, Cell p, const Board& b, const std::vector<Cell>& cells) {
     static const int dx[4]={1,0,1,1}, dy[4]={0,1,1,-1};
     int count = 0;
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = -4; j <= 0; ++j)
-        {
-            // pattern: p, p, p, p, p  (5 cells)
+    for (int i = 0; i < 4; ++i) {
+        for (int j = -(int)cells.size() + 1; j <= 0; ++j) {
             bool ok = true;
-            for (int k = 0; k <= 4; ++k)
-                if (!isPiece(b, x+(j+k)*dx[i], y+(j+k)*dy[i], p)) { ok=false; break; }
-            if (ok) { ++count; break; }
+            for (int k = 0; k < (int)cells.size(); ++k) {
+                Cell c = cells[k];
+                if (c == p) {
+                    ok = ok && isPiece(b, x+(j+k)*dx[i], y+(j+k)*dy[i], p);
+                } else if (c == Cell::Empty) {
+                    ok = ok && isEmpty(b, x+(j+k)*dx[i], y+(j+k)*dy[i]);
+                } else {
+                    ok = ok && isOther(b, x+(j+k)*dx[i], y+(j+k)*dy[i], p);
+                }
+            }
+            if (ok) {
+                ++count;
+                break;
+            }
         }
     }
     return count;
+}
+
+// p p p p p (five in a row)
+int AI::fiveInARow(int x, int y, Cell p, const Board& b) const {
+    return checkShape(x, y, p, b, {p, p, p, p, p});
 }
 
 // _ p p p p _ (live four)
-int AI::liveFour(int x, int y, Cell p, const Board& b) const
-{
-    static const int dx[4]={1,0,1,1}, dy[4]={0,1,1,-1};
-    int count = 0;
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = -5; j <= 0; ++j)
-        {
-            // pattern: empty, p, p, p, p, empty  (6 cells)
-            int r0=x+(j)*dx[i],   c0=y+(j)*dy[i];
-            int r5=x+(j+5)*dx[i], c5=y+(j+5)*dy[i];
-            if (!isEmpty(b,r0,c0)) continue;
-            if (!isEmpty(b,r5,c5)) continue;
-            bool ok = true;
-            for (int k = 1; k <= 4; ++k)
-                if (!isPiece(b, x+(j+k)*dx[i], y+(j+k)*dy[i], p)) { ok=false; break; }
-            if (ok) { ++count; break; }
-        }
-    }
-    return count;
+int AI::liveFour(int x, int y, Cell p, const Board& b) const {
+    return checkShape(x, y, p, b, {Cell::Empty, p, p, p, p, Cell::Empty});
 }
 
 // x p p p p _ or _ p p p p x (dead four)
-int AI::deadFour(int x, int y, Cell p, const Board& b) const
-{
-    static const int dx[4]={1,0,1,1}, dy[4]={0,1,1,-1};
-    int count = 0;
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = -5; j <= 0; ++j)
-        {
-            // x p p p p _
-            {
-                bool ok = isOther(b, x+j*dx[i], y+j*dy[i], p);
-                for (int k=1;k<=4&&ok;++k)
-                    ok = isPiece(b, x+(j+k)*dx[i], y+(j+k)*dy[i], p);
-                ok = ok && isEmpty(b, x+(j+5)*dx[i], y+(j+5)*dy[i]);
-                if (ok) { ++count; break; }
-            }
-            // _ p p p p x
-            {
-                bool ok = isEmpty(b, x+j*dx[i], y+j*dy[i]);
-                for (int k=1;k<=4&&ok;++k)
-                    ok = isPiece(b, x+(j+k)*dx[i], y+(j+k)*dy[i], p);
-                ok = ok && isOther(b, x+(j+5)*dx[i], y+(j+5)*dy[i], p);
-                if (ok) { ++count; break; }
-            }
-        }
-    }
-    return count;
+int AI::deadFour(int x, int y, Cell p, const Board& b) const {
+    return checkShape(x, y, p, b, {opponent(p), p, p, p, p, Cell::Empty}) +
+           checkShape(x, y, p, b, {Cell::Empty, p, p, p, p, opponent(p)});
 }
 
 // _ p p p _ (live three)
-int AI::liveThree(int x, int y, Cell p, const Board& b) const
-{
-    static const int dx[4]={1,0,1,1}, dy[4]={0,1,1,-1};
-    int count = 0;
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = -4; j <= 0; ++j)
-        {
-            bool ok = isEmpty(b, x+j*dx[i], y+j*dy[i]);
-            for (int k=1;k<=3&&ok;++k)
-                ok = isPiece(b, x+(j+k)*dx[i], y+(j+k)*dy[i], p);
-            ok = ok && isEmpty(b, x+(j+4)*dx[i], y+(j+4)*dy[i]);
-            if (ok) { ++count; break; }
-        }
-    }
-    return count;
+int AI::liveThree(int x, int y, Cell p, const Board& b) const {
+    return checkShape(x, y, p, b, {Cell::Empty, p, p, p, Cell::Empty});
 }
 
 // x _ p p p _ x style (dead three) — blocked on one side
-int AI::deadThree(int x, int y, Cell p, const Board& b) const
-{
-    static const int dx[4]={1,0,1,1}, dy[4]={0,1,1,-1};
-    int count = 0;
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = -5; j <= 0; ++j)
-        {
-            // x _ _ p p p
-            {
-                bool ok = isOther(b,x+j*dx[i],y+j*dy[i],p)
-                       && isEmpty(b,x+(j+1)*dx[i],y+(j+1)*dy[i])
-                       && isEmpty(b,x+(j+2)*dx[i],y+(j+2)*dy[i]);
-                for (int k=3;k<=5&&ok;++k)
-                    ok = isPiece(b,x+(j+k)*dx[i],y+(j+k)*dy[i],p);
-                if (ok) { ++count; break; }
-            }
-            // p p p _ _ x
-            {
-                bool ok = true;
-                for (int k=0;k<=2&&ok;++k)
-                    ok = isPiece(b,x+(j+k)*dx[i],y+(j+k)*dy[i],p);
-                ok = ok && isEmpty(b,x+(j+3)*dx[i],y+(j+3)*dy[i])
-                        && isEmpty(b,x+(j+4)*dx[i],y+(j+4)*dy[i])
-                        && isOther(b,x+(j+5)*dx[i],y+(j+5)*dy[i],p);
-                if (ok) { ++count; break; }
-            }
-        }
-    }
-    return count;
+int AI::deadThree(int x, int y, Cell p, const Board& b) const {
+    return checkShape(x, y, p, b, {opponent(p), Cell::Empty, p, p, p}) +
+           checkShape(x, y, p, b, {p, p, p, Cell::Empty, opponent(p)});
 }
 
 // _ _ p p _ _ (live two)
-int AI::liveTwo(int x, int y, Cell p, const Board& b) const
-{
-    static const int dx[4]={1,0,1,1}, dy[4]={0,1,1,-1};
-    int count = 0;
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = -5; j <= 0; ++j)
-        {
-            bool ok = isEmpty(b,x+j*dx[i],y+j*dy[i])
-                   && isEmpty(b,x+(j+1)*dx[i],y+(j+1)*dy[i])
-                   && isPiece(b,x+(j+2)*dx[i],y+(j+2)*dy[i],p)
-                   && isPiece(b,x+(j+3)*dx[i],y+(j+3)*dy[i],p)
-                   && isEmpty(b,x+(j+4)*dx[i],y+(j+4)*dy[i])
-                   && isEmpty(b,x+(j+5)*dx[i],y+(j+5)*dy[i]);
-            if (ok) { ++count; break; }
-        }
-    }
-    return count;
+int AI::liveTwo(int x, int y, Cell p, const Board& b) const {
+    return checkShape(x, y, p, b, {Cell::Empty, Cell::Empty, p, p, Cell::Empty, Cell::Empty});
 }
 
 // _ p _ p _ (one-one)
-int AI::oneOne(int x, int y, Cell p, const Board& b) const
-{
-    static const int dx[4]={1,0,1,1}, dy[4]={0,1,1,-1};
-    int count = 0;
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = -4; j <= 0; ++j)
-        {
-            bool ok = isEmpty(b,x+j*dx[i],y+j*dy[i])
-                   && isPiece(b,x+(j+1)*dx[i],y+(j+1)*dy[i],p)
-                   && isEmpty(b,x+(j+2)*dx[i],y+(j+2)*dy[i])
-                   && isPiece(b,x+(j+3)*dx[i],y+(j+3)*dy[i],p)
-                   && isEmpty(b,x+(j+4)*dx[i],y+(j+4)*dy[i]);
-            if (ok) { ++count; break; }
-        }
-    }
-    return count;
+int AI::oneOne(int x, int y, Cell p, const Board& b) const {
+    return checkShape(x, y, p, b, {Cell::Empty, p, Cell::Empty, p, Cell::Empty});
 }
 
 // _ p _ p p _ or _ p p _ p _ (one-two)
-int AI::oneTwo(int x, int y, Cell p, const Board& b) const
-{
-    static const int dx[4]={1,0,1,1}, dy[4]={0,1,1,-1};
-    int count = 0;
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = -5; j <= 0; ++j)
-        {
-            // _ p _ p p _
-            {
-                bool ok = isEmpty(b,x+j*dx[i],y+j*dy[i])
-                       && isPiece(b,x+(j+1)*dx[i],y+(j+1)*dy[i],p)
-                       && isEmpty(b,x+(j+2)*dx[i],y+(j+2)*dy[i])
-                       && isPiece(b,x+(j+3)*dx[i],y+(j+3)*dy[i],p)
-                       && isPiece(b,x+(j+4)*dx[i],y+(j+4)*dy[i],p)
-                       && isEmpty(b,x+(j+5)*dx[i],y+(j+5)*dy[i]);
-                if (ok) { ++count; break; }
-            }
-            // _ p p _ p _
-            {
-                bool ok = isEmpty(b,x+j*dx[i],y+j*dy[i])
-                       && isPiece(b,x+(j+1)*dx[i],y+(j+1)*dy[i],p)
-                       && isPiece(b,x+(j+2)*dx[i],y+(j+2)*dy[i],p)
-                       && isEmpty(b,x+(j+3)*dx[i],y+(j+3)*dy[i])
-                       && isPiece(b,x+(j+4)*dx[i],y+(j+4)*dy[i],p)
-                       && isEmpty(b,x+(j+5)*dx[i],y+(j+5)*dy[i]);
-                if (ok) { ++count; break; }
-            }
-        }
-    }
-    return count;
+int AI::oneTwo(int x, int y, Cell p, const Board& b) const {
+    return checkShape(x, y, p, b, {Cell::Empty, p, Cell::Empty, p, p, Cell::Empty}) +
+           checkShape(x, y, p, b, {Cell::Empty, p, p, Cell::Empty, p, Cell::Empty});
 }
 
 int AI::scoreCell(int x, int y, Cell ai, const Board& board) const {

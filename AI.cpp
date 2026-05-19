@@ -7,40 +7,25 @@ Cell AI::opponent(Cell player) const {
     return (player == Cell::X) ? Cell::O : Cell::X;
 }
 
-static bool isEmpty (const Board& b, int r, int c) {
-    if (r < 0 || r >= Board::SIZE || c < 0 || c >= Board::SIZE)
-        return false;
-    return b.getCell(r, c) == Cell::Empty;
+bool AI::cellEqual(const Board& b, int r, int c, Cell p, Cell cell) const {
+    Cell v;
+    if (r < 0 || r >= Board::SIZE || c < 0 || c >= Board::SIZE) {
+        v = opponent(p);
+    } else {
+        v = b.getCell(r, c);
+    }
+    return v == cell;
 }
 
-static bool isPiece (const Board& b, int r, int c, Cell p) {
-    if (r < 0 || r >= Board::SIZE || c < 0 || c >= Board::SIZE)
-        return false;
-    return b.getCell(r, c) == p;
-}
-
-static bool isOther (const Board& b, int r, int c, Cell p) {
-    if (r < 0 || r >= Board::SIZE || c < 0 || c >= Board::SIZE)
-        return true;
-    Cell v = b.getCell(r, c);
-    return v != Cell::Empty && v != p;
-}
-
-int checkShape(int x, int y, Cell p, const Board& b, const std::vector<Cell>& cells) {
+int AI::checkShape(int x, int y, Cell p, const Board& b, const std::vector<Cell>& cells) const {
     static const int dx[4]={1,0,1,1}, dy[4]={0,1,1,-1};
     int count = 0;
     for (int i = 0; i < 4; ++i) {
         for (int j = -(int)cells.size() + 1; j <= 0; ++j) {
             bool ok = true;
             for (int k = 0; k < (int)cells.size(); ++k) {
-                Cell c = cells[k];
-                if (c == p) {
-                    ok = ok && isPiece(b, x+(j+k)*dx[i], y+(j+k)*dy[i], p);
-                } else if (c == Cell::Empty) {
-                    ok = ok && isEmpty(b, x+(j+k)*dx[i], y+(j+k)*dy[i]);
-                } else {
-                    ok = ok && isOther(b, x+(j+k)*dx[i], y+(j+k)*dy[i], p);
-                }
+                Cell cell = cells[k];
+                ok = ok && cellEqual(b, x+(j+k)*dx[i], y+(j+k)*dy[i], p, cell);
             }
             if (ok) {
                 ++count;

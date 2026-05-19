@@ -72,10 +72,10 @@ int AI::liveThree(int x, int y, Cell p, const Board& b) const {
     return checkShape(x, y, p, b, {Cell::Empty, p, p, p, Cell::Empty});
 }
 
-// x _ p p p _ x style (dead three) — blocked on one side
+// x p p p _ _ or _ _ p p p x (dead three)
 int AI::deadThree(int x, int y, Cell p, const Board& b) const {
-    return checkShape(x, y, p, b, {opponent(p), Cell::Empty, p, p, p}) +
-           checkShape(x, y, p, b, {p, p, p, Cell::Empty, opponent(p)});
+    return checkShape(x, y, p, b, {opponent(p), p, p, p, Cell::Empty, Cell::Empty}) +
+           checkShape(x, y, p, b, {Cell::Empty, Cell::Empty, p, p, p, opponent(p)});
 }
 
 // _ _ p p _ _ (live two)
